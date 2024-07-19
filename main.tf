@@ -89,3 +89,39 @@ resource "aws_eip_association" "eip_assoc" {
   instance_id   = aws_instance.salt_master.id
   allocation_id = aws_eip.master_eip.id
 }
+
+resource "null_resource" "wait_for_bootstrap_to_finish" {
+  provisioner "local-exec" {
+    command = <<-EOF
+    alias ssh='ssh -q -i ${var.private_key_file} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    while true; do
+      if ssh ec2-user@${aws_eip.master_eip.public_ip} [[ -f /home/ec2-user/done ]]; then
+        echo "Bootstrap completed in the Master"
+        break
+      else
+        echo "Waiting for bootstrap completion in the Master"
+        sleep 5
+        continue
+      fi
+    done
+    
+    %{for worker_public_ip in aws_instance.salt_minion[*].public_ip~}
+      while true; do
+      if ssh ec2-user@${worker_public_ip} [[ -f /home/ec2-user/done ]]; then
+        echo "Bootstrap completed in the Minion: ${worker_public_ip}"
+        break
+      else
+        echo "Waiting for bootstrap completion in the Minion: ${worker_public_ip}"
+        sleep 5
+        continue
+      fi
+      done
+    %{endfor~}
+
+    ssh ec2-user@${aws_eip.master_eip.public_ip} sudo salt-key -A -y
+    EOF
+  }
+  triggers = {
+    instance_ids = join(",", concat([aws_instance.salt_master.id], aws_instance.salt_minion[*].id))
+  }
+}

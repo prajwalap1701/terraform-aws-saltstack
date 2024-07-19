@@ -32,8 +32,8 @@ Additionally, you need an AWS account and appropriate credentials configured in 
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/prajwalap1701/terraform-saltstack-aws.git
-    cd terraform-saltstack-aws
+    git clone https://github.com/prajwalap1701/terraform-aws-saltstack.git
+    cd terraform-aws-saltstack
     ```
 
 2. Create a keypair for accessing AWS Instances via SSH:

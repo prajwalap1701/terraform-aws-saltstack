@@ -41,7 +41,7 @@ resource "aws_instance" "salt_master" {
   }
 
   user_data = templatefile(
-    "./scripts/salt-install.tftpl",
+    "${path.root}/${path.module}/scripts/salt-install.tftpl",
     {
       instance         = "master",
       master_public_ip = aws_eip.master_eip.public_ip,
@@ -68,7 +68,7 @@ resource "aws_instance" "salt_minion" {
   }
 
   user_data = templatefile(
-    "./scripts/salt-install.tftpl",
+    "${path.root}/${path.module}/scripts/salt-install.tftpl",
     {
       instance         = "minion",
       master_public_ip = aws_eip.master_eip.public_ip,

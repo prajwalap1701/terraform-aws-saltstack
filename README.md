@@ -37,18 +37,20 @@ Additionally, you need an AWS account and appropriate credentials configured in 
     ```
 
 2. Create a keypair for accessing AWS Instances via SSH:
-
+   ```sh
+   mkdir keys
+    ```
     ```sh
     ssh-keygen -t rsa -b 2048 -f ./keys/aws-key
     ```
 
-3. Initialize Terraform:
+4. Initialize Terraform:
 
     ```sh
     terraform init
     ```
 
-4. Configure your AWS credentials:
+5. Configure your AWS credentials:
 
     ```sh
     aws configure

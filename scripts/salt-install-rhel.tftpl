@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -e  # Exit immediately if a command exits with a non-zero status
+
+# Ensure curl is installed
+if ! command -v curl >/dev/null 2>&1; then
+  sudo yum install -y curl
+fi
+
+# Download and run the Salt bootstrap script to install both salt-master and salt-minion
+echo "Installing salt-minion using bootstrap script..."
+curl -o bootstrap-salt.sh -L https://github.com/saltstack/salt-bootstrap/releases/latest/download/bootstrap-salt.sh
+chmod +x bootstrap-salt.sh
+sudo sh bootstrap-salt.sh stable
+
+# Set hostname
+sudo hostnamectl set-hostname rhel-minion-${minion_index}
+
+sudo systemctl enable salt-minion && sudo systemctl start salt-minion
+echo -e "id: rhel-minion-${minion_index}\nmaster: ${master_public_ip}" | sudo tee /etc/salt/minion.d/minion.conf > /dev/null
+sudo systemctl restart salt-minion
+
+# Indicate completion
+touch /home/ec2-user/done

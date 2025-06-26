@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -e  # Exit immediately if a command exits with a non-zero status
+
+echo "Updating package index..."
+sudo apt-get update
+
+# Install curl if not already installed
+if ! command -v curl >/dev/null 2>&1; then
+  echo "Installing curl..."
+  sudo apt-get install -y curl
+fi
+
+# Download and run the Salt bootstrap script to install both salt-master and salt-minion
+echo "Installing salt-master and salt-minion using bootstrap script..."
+curl -o bootstrap-salt.sh -L https://github.com/saltstack/salt-bootstrap/releases/latest/download/bootstrap-salt.sh
+
+# If the instance role is Salt Master
+%{ if instance == "master" ~}
+sudo hostnamectl set-hostname salt-master
+
+sudo sh bootstrap-salt.sh -M stable
+
+sudo systemctl enable salt-master && sudo systemctl start salt-master
+sudo systemctl enable salt-minion && sudo systemctl start salt-minion
+echo -e "id: minion-localhost\nmaster: localhost" | sudo tee /etc/salt/minion.d/minion.conf > /dev/null
+sudo systemctl restart salt-minion
+%{~ endif ~}
+
+
+# If the instance role is a Salt Minion
+%{ if instance == "minion" ~}
+sudo sh bootstrap-salt.sh stable
+
+sudo hostnamectl set-hostname ubuntu-minion-${minion_index}
+sudo systemctl enable salt-minion && sudo systemctl start salt-minion
+echo -e "id: ubuntu-minion-${minion_index}\nmaster: ${master_public_ip}" | sudo tee /etc/salt/minion.d/minion.conf > /dev/null
+sudo systemctl restart salt-minion
+
+%{~ endif ~}
+
+# Indicate completion
+touch /home/ubuntu/done

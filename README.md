@@ -1,8 +1,16 @@
 # SaltStack AWS Terraform Project
 
-Create a Saltstack environment using Terraform on AWS Cloud.
+Create a Saltstack Dev environment using Terraform on AWS Cloud.
 This project demonstrates the integration of SaltStack and Terraform for provisioning and managing infrastructure on AWS.   
-The repository contains configurations and scripts to automate the deployment of AWS resources and configure them using SaltStack.
+
+By default 3 Ec2 instances will be created:
+
+|Name            | Role           | OS                   |
+|----------------|----------------|----------------------|
+| Salt-Master    |Salt Master     | Ubuntu               |
+| Ubuntu-Salt-Minion-1  |Salt Minion     | Ubuntu               |
+| RHEL-Salt-Minion-1  |Salt Minion     | RHEL (Amazon Linux)  |
+
 
 ## Table of Contents
 
@@ -29,31 +37,41 @@ Additionally, you need an AWS account and appropriate credentials configured in 
 
 ## Installation
 
-1. Clone the repository:
+1. Create a Directory and a terraform file:
 
     ```sh
-    git clone https://github.com/prajwalap1701/terraform-aws-saltstack.git
-    cd terraform-aws-saltstack
+    mkdir tf-saltstack && cd tf-saltstack
+    ```
+    ```sh
+    cat > main.tf <<EOF
+    module "saltstack" {
+    source  = "prajwalap1701/saltstack/aws"
+    version = "3.0.0"
+    }
+    EOF
+
     ```
 
 2. Create a keypair for accessing AWS Instances via SSH:
-   ```sh
-   mkdir keys
-    ```
     ```sh
-    ssh-keygen -t rsa -b 2048 -f ./keys/aws-key
+    ssh-keygen -t rsa -b 2048
     ```
+    Generates two files (by default in ~/.ssh/):
 
-4. Initialize Terraform:
+    id_rsa – your private key (keep this secret!)
+    
+    id_rsa.pub – your public key (safe to share or copy to servers)
 
-    ```sh
-    terraform init
-    ```
-
-5. Configure your AWS credentials:
+4. Configure your AWS credentials:
 
     ```sh
     aws configure
+    ```
+
+5. Initialize Terraform:
+
+    ```sh
+    terraform init
     ```
 
 ## Usage
@@ -71,25 +89,45 @@ Additionally, you need an AWS account and appropriate credentials configured in 
     ```
     or if you want more/less minions
     ```sh
-    terraform apply -var="minion_count=2"
-    ```
+    terraform apply \
+    -var="ubuntu_minion_count=2" \
+    -var="rhel_minion_count=3"
 
-3. Once the resources are provisioned, ensure that the Salt Master and Minion are correctly set up.
-    ```sh
-    sudo salt '*' test.ping
     ```
+3. Wait for Apply to finish:
+    ```
+    Apply complete! Resources: 15 added, 0 changed, 0 destroyed.
+
+    Outputs:
+
+    salt_instances = [
+    {
+        "name" = "Salt-Master"
+        "public_ip" = "54.175.13.78"
+    },
+    {
+        "name" = "Ubuntu-Salt-Minion-1"
+        "public_ip" = "54.89.255.219"
+    },
+    {
+        "name" = "RHEL-Salt-Minion-1"
+        "public_ip" = "54.165.74.231"
+    },
+    ]
+    ```
+4. Once the resources are provisioned, ensure that the Salt Master and Minion are correctly set up.
+    ```sh
+    ssh ubuntu@<salt-master-public-ip>
+    ```
+    ```sh
+    ubuntu@salt-master:~$ sudo salt \* test.ping
+
     Output:
-    ```
-    minion-0:
+    ubuntu-minion-1:
         True
-    minion-1:
+    rhel-minion-1:
         True
-    minion-2:
+    minion-localhost:
         True
     ```
 
-4. Run Salt states to apply the configurations:
-
-    ```sh
-    sudo salt '*' state.apply
-    ```

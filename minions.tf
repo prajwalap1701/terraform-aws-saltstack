@@ -66,7 +66,7 @@ resource "null_resource" "bootstrap_ubuntu_minions" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file(var.private_key_file)
+    private_key = tls_private_key.rsa_key.private_key_pem
     host        = each.value.public_ip
   }
   provisioner "remote-exec" {
@@ -89,7 +89,7 @@ resource "null_resource" "bootstrap_rhel_minions" {
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    private_key = file(var.private_key_file)
+    private_key = tls_private_key.rsa_key.private_key_pem
     host        = each.value.public_ip
   }
   provisioner "remote-exec" {

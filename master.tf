@@ -1,10 +1,27 @@
+resource "tls_private_key" "rsa_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
 resource "aws_key_pair" "aws_key" {
   key_name   = "aws-key"
-  public_key = file(var.public_key_file)
+  public_key = tls_private_key.rsa_key.public_key_openssh
 }
 
+resource "local_file" "key_local" {
+  content  = tls_private_key.rsa_key.private_key_pem
+  filename = "./aws-key.pem"
+}
 
+resource "aws_eip" "master_eip" {
+  domain = "vpc"
+}
+
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = aws_instance.salt_master.id
+  allocation_id = aws_eip.master_eip.id
+}
 resource "aws_instance" "salt_master" {
+  depends_on             = [aws_eip.master_eip]
   ami                    = data.aws_ami.ubuntu_ami.id
   instance_type          = "t2.small"
   key_name               = aws_key_pair.aws_key.key_name
@@ -29,22 +46,13 @@ resource "aws_instance" "salt_master" {
   )
 }
 
-resource "aws_eip" "master_eip" {
-  domain = "vpc"
-}
-
-resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.salt_master.id
-  allocation_id = aws_eip.master_eip.id
-}
-
 resource "null_resource" "master_bootstrap" {
   depends_on = [aws_instance.salt_master]
 
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file(var.private_key_file)
+    private_key = tls_private_key.rsa_key.private_key_pem
     host        = aws_eip.master_eip.public_ip
   }
 
@@ -74,7 +82,7 @@ resource "null_resource" "accept_all_keys" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file(var.private_key_file)
+    private_key = tls_private_key.rsa_key.private_key_pem
     host        = aws_eip.master_eip.public_ip
   }
 

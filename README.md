@@ -46,29 +46,20 @@ Additionally, you need an AWS account and appropriate credentials configured in 
     cat > main.tf <<EOF
     module "saltstack" {
     source  = "prajwalap1701/saltstack/aws"
-    version = "3.0.0"
+    version = "3.1.0"
     }
     EOF
 
     ```
 
-2. Create a keypair for accessing AWS Instances via SSH:
-    ```sh
-    ssh-keygen -t rsa -b 2048
-    ```
-    Generates two files (by default in ~/.ssh/):
 
-    id_rsa – your private key (keep this secret!)
-    
-    id_rsa.pub – your public key (safe to share or copy to servers)
-
-4. Configure your AWS credentials:
+2. Configure your AWS credentials:
 
     ```sh
     aws configure
     ```
 
-5. Initialize Terraform:
+3. Initialize Terraform:
 
     ```sh
     terraform init
@@ -94,7 +85,7 @@ Additionally, you need an AWS account and appropriate credentials configured in 
     -var="rhel_minion_count=3"
 
     ```
-3. Wait for Apply to finish:
+   Wait for Apply to finish:
     ```
     Apply complete! Resources: 15 added, 0 changed, 0 destroyed.
 
@@ -117,7 +108,7 @@ Additionally, you need an AWS account and appropriate credentials configured in 
     ```
 4. Once the resources are provisioned, ensure that the Salt Master and Minion are correctly set up.
     ```sh
-    ssh ubuntu@<salt-master-public-ip>
+    ssh -i ./aws-key.pem ubuntu@<salt-master-public-ip>
     ```
     ```sh
     ubuntu@salt-master:~$ sudo salt \* test.ping
